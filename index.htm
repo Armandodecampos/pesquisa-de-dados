@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Leitor de Excel</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input[type="file"], input[type="text"] { margin-bottom: 10px; }
+    ul { list-style-type: none; padding-left: 0; }
+    li { padding: 5px 0; border-bottom: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+
+  <h1>Upload de Arquivo Excel</h1>
+  <input type="file" id="upload" accept=".xls,.xlsx" />
+  <br>
+  <input type="text" id="search" placeholder="Pesquisar..." />
+  <ul id="list"></ul>
+
+  <script>
+    const uploadInput = document.getElementById('upload');
+    const searchInput = document.getElementById('search');
+    const list = document.getElementById('list');
+    let allItems = [];
+
+    uploadInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+      allItems = json.slice(1).map(row => row.join(' - ')); // Ignora o cabeçalho
+      renderList(allItems);
+    });
+
+    searchInput.addEventListener('input', () => {
+  const search = searchInput.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const searchWords = search.split(/\s+/).filter(Boolean);
+
+  const filtered = allItems.filter(item => {
+    const itemWords = item.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return searchWords.every(word => itemWords.includes(word));
+  });
+
+  renderList(filtered);
+});
+
+
+    function renderList(items) {
+      list.innerHTML = '';
+      items.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        list.appendChild(li);
+      });
+    }
+  </script>
+
+</body>
+</html>
