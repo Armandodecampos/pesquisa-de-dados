@@ -63,19 +63,30 @@
     let allItems = [];
 
     uploadInput.addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      document.getElementById('file-name').textContent = `📂 Arquivo selecionado: ${file.name}`;
-      if (!file) return;
+  const file = e.target.files[0];
+  document.getElementById('file-name').textContent = `📂 Arquivo selecionado: ${file.name}`;
+  if (!file) return;
 
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data, { type: 'array' });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+  const data = await file.arrayBuffer();
+  const workbook = XLSX.read(data, { type: 'array' });
+  const sheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[sheetName];
+  const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-      allItems = json.slice(2).map(row => row.join(' - ')); // Ignora o cabeçalho e a linha 2
-      renderList(allItems);
-    });
+  const seen = new Set();
+  const filteredRows = json.slice(2).filter(row => {
+    const key = row[6]; // Coluna G
+    if (!key || seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+
+  allItems = filteredRows.map(row => row.join(' - '));
+  renderList(allItems);
+});
+
 
     searchInput.addEventListener('input', () => {
   const search = searchInput.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
