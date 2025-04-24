@@ -9,40 +9,51 @@
     input[type="file"], input[type="text"] { margin-bottom: 10px; }
     ul { list-style-type: none; padding-left: 0; }
     li { padding: 5px 0; border-bottom: 1px solid #ccc; }
-     #upload {
-    display: none; /* Esconde o input padrão */
-  }
+    #upload {
+      display: none; /* Esconde o input padrão */
+    }
 
-  .upload-label {
-    display: inline-block;
-    background-color: #007bff;
-    color: white;
-    padding: 10px 15px;
-    font-size: 16px;
-    border-radius: 5px;
-    cursor: pointer;
-  }
+    .upload-label {
+      display: inline-block;
+      background-color: #007bff;
+      color: white;
+      padding: 10px 15px;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
 
-  .upload-label:hover {
-    background-color: #0056b3;
-  }
-  
-  .search-input {
-  width: 100%;
-  max-width: 400px;
-  padding: 10px 15px;
-  font-size: 16px;
-  border: 2px solid #ccc;
-  border-radius: 25px;
-  outline: none;
-  transition: 0.3s;
-  box-sizing: border-box;
-}
+    .upload-label:hover {
+      background-color: #0056b3;
+    }
 
-.search-input:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 5px rgba(0,123,255,0.4);
-}
+    .search-input {
+      width: 100%;
+      max-width: 400px;
+      padding: 10px 15px;
+      font-size: 16px;
+      border: 2px solid #ccc;
+      border-radius: 25px;
+      outline: none;
+      transition: 0.3s;
+      box-sizing: border-box;
+    }
+
+    .search-input:focus {
+      border-color: #007bff;
+      box-shadow: 0 0 5px rgba(0,123,255,0.4);
+    }
+    #department-filter {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    #department-filter label {
+      margin-left: 0;
+      margin-right: 0;
+    }
   </style>
 </head>
 <body>
@@ -53,7 +64,11 @@
   <p id="file-name" style="font-style: italic; color: #555;"></p>
   <br>
   <p id="count">Total de pessoas: 0</p>
-<input type="search" id="search" placeholder="🔍 Pesquisar..." class="search-input" />
+  <div id="department-filter" style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+    <strong>Filtrar por Departamento:</strong><br>
+  </div>
+  <input type="search" id="search" placeholder="🔍 Pesquisar..." class="search-input" />
+  <button id="export-excel" style="padding: 10px 15px; font-size: 16px; border: none; border-radius: 5px; background-color: #28a745; color: white; cursor: pointer; margin-top: 20px;">Exportar para Excel</button>
   <ul id="list"></ul>
 
   <script>
@@ -61,68 +76,53 @@
     const searchInput = document.getElementById('search');
     const list = document.getElementById('list');
     let allItems = [];
+    let departmentCheckboxes = {};
+    const departmentFilterDiv = document.getElementById('department-filter');
 
     uploadInput.addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  document.getElementById('file-name').textContent = `📂 Arquivo selecionado: ${file.name}`;
-  if (!file) return;
+      const file = e.target.files[0];
+      document.getElementById('file-name').textContent = `📂 Arquivo selecionado: ${file.name}`;
+      if (!file) return;
 
-  const data = await file.arrayBuffer();
-  const workbook = XLSX.read(data, { type: 'array' });
-  const sheetName = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[sheetName];
-  const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-  const seen = new Set();
-  const departments = {};
+      const seen = new Set();
+      const departments = {};
 
-  json.slice(2).forEach(row => {
-    const uniqueKey = row[6]; // Coluna G
-    const department = row[11] && row[11].trim() ? row[11].trim() : "Portaria Virtual"; // Coluna L
+      json.slice(2).forEach(row => {
+        const uniqueKey = row[6]; // Coluna G
+        const department = row[11] && row[11].trim() ? row[11].trim() : "Portaria Virtual"; // Coluna L
 
-    if (!uniqueKey || !department || seen.has(uniqueKey)) return;
+        if (!uniqueKey || !department || seen.has(uniqueKey)) return;
 
-    seen.add(uniqueKey);
+        seen.add(uniqueKey);
 
-    if (!departments[department]) {
-      departments[department] = [];
-    }
+        if (!departments[department]) {
+          departments[department] = [];
+        }
 
-    const nome = row[7] || "";       // Coluna H
-const rg = row[6] || "";         // Coluna G
-const sobrenome = row[8] || "";  // Coluna I
+        const nome = row[7] || "";        // Coluna H
+        const rg = row[6] || "";          // Coluna G
+        const sobrenome = row[8] || "";   // Coluna I
 
-const itemText = `${nome} ${sobrenome} - ${rg}`;
-departments[department].push(itemText);
+        const itemText = `${nome} ${sobrenome} - ${rg}`;
+        departments[department].push(itemText);
 
-  });
+      });
 
-  allItems = departments;
-  renderGroupedList(departments);
-});
+      allItems = departments;
+      renderDepartmentFilters(departments); // Chama a função para criar os checkboxes
+      filterAndRenderList(); // Chama a função para filtrar e exibir a lista
+    });
 
 
     searchInput.addEventListener('input', () => {
-  const search = searchInput.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  const searchWords = search.split(/\s+/).filter(Boolean);
-
-  const filteredGroups = {};
-
-  Object.keys(allItems).forEach(dept => {
-    const filtered = allItems[dept].filter(item => {
-      const itemWords = item.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      return searchWords.every(word => itemWords.includes(word));
+      filterAndRenderList();
     });
-
-    if (filtered.length > 0) {
-      filteredGroups[dept] = filtered;
-    }
-  });
-
-  renderGroupedList(filteredGroups);
-});
-
-
 
     function renderList(items) {
       list.innerHTML = '';
@@ -131,40 +131,114 @@ departments[department].push(itemText);
         li.textContent = item;
         list.appendChild(li);
       });
+
+      document.getElementById('count').textContent = `Total de pessoas: ${items.length}`;
     }
-    
-    function renderList(items) {
-  list.innerHTML = '';
-  items.forEach(item => {
-    const li = document.createElement('li');
-    li.textContent = item;
-    list.appendChild(li);
-  });
 
-  document.getElementById('count').textContent = `Total de pessoas: ${items.length}`;
-}
+    function renderGroupedList(groups) {
+      list.innerHTML = '';
+      let total = 0;
 
-function renderGroupedList(groups) {
-  list.innerHTML = '';
-  let total = 0;
+      Object.keys(groups).sort().forEach(dept => {
+        const deptHeader = document.createElement('li');
+        deptHeader.innerHTML = `<strong>${dept}</strong>`;
+        deptHeader.style.marginTop = '15px';
+        list.appendChild(deptHeader);
 
-  Object.keys(groups).sort().forEach(dept => {
-    const deptHeader = document.createElement('li');
-    deptHeader.innerHTML = `<strong>${dept}</strong>`;
-    deptHeader.style.marginTop = '15px';
-    list.appendChild(deptHeader);
+        groups[dept].forEach(item => {
+          const li = document.createElement('li');
+          li.textContent = item;
+          list.appendChild(li);
+          total++;
+        });
+      });
 
-    groups[dept].forEach(item => {
-      const li = document.createElement('li');
-      li.textContent = item;
-      list.appendChild(li);
-      total++;
+      document.getElementById('count').textContent = `Total de pessoas: ${total}`;
+    }
+
+    function renderDepartmentFilters(departments) {
+      departmentFilterDiv.innerHTML = '<strong>Filtrar por Departamento:</strong><br>';
+      departmentCheckboxes = {}; // Limpa os checkboxes anteriores
+
+      Object.keys(departments).sort().forEach(dept => {
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = `dept-${dept.replace(/\s+/g, '-')}`; // ID único para cada checkbox
+        checkbox.value = dept;
+        checkbox.checked = true; // Marcar todos por padrão
+        checkbox.addEventListener('change', filterAndRenderList);
+
+        const label = document.createElement('label');
+        label.htmlFor = checkbox.id;
+        label.textContent = dept;
+        label.style.marginLeft = '0px';
+        label.style.marginRight = '0px';
+
+        const div = document.createElement('div');
+        div.appendChild(checkbox);
+        div.appendChild(label);
+        departmentFilterDiv.appendChild(div);
+        departmentCheckboxes[checkbox.id] = dept; // Armazena a relação ID do checkbox e nome do departamento
+      });
+    }
+
+    function filterAndRenderList() {
+      const search = searchInput.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const searchWords = search.split(/\s+/).filter(Boolean);
+      const visibleDepartments = new Set();
+
+      // Verifica quais departamentos estão marcados
+      Object.keys(departmentCheckboxes).forEach(checkboxId => {
+        if (document.getElementById(checkboxId).checked) {
+          visibleDepartments.add(departmentCheckboxes[checkboxId]);
+        }
+      });
+
+      const filteredGroups = {};
+
+      Object.keys(allItems).forEach(dept => {
+        if (visibleDepartments.has(dept)) {
+          const filtered = allItems[dept].filter(item => {
+            const itemWords = item.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            return searchWords.every(word => itemWords.includes(word));
+          });
+
+          if (filtered.length > 0) {
+            filteredGroups[dept] = filtered;
+          }
+        }
+      });
+
+      renderGroupedList(filteredGroups);
+    }
+
+
+    // botão para gerar o arquivo excel e baixar
+    const exportExcelBtn = document.getElementById('export-excel');
+
+    exportExcelBtn.addEventListener('click', () => {
+      const workbook = XLSX.utils.book_new();
+      const visibleDepartments = new Set();
+
+       // Verifica quais departamentos estão marcados
+      Object.keys(departmentCheckboxes).forEach(checkboxId => {
+        if (document.getElementById(checkboxId).checked) {
+          visibleDepartments.add(departmentCheckboxes[checkboxId]);
+        }
+      });
+
+      Object.keys(allItems).forEach(dept => {
+        if(visibleDepartments.has(dept)){ //só adiciona a aba se o departamento estiver checado
+          const deptData = [[dept]];
+          allItems[dept].forEach(item => {
+            deptData.push([item]);
+          });
+          const worksheet = XLSX.utils.aoa_to_sheet(deptData);
+          XLSX.utils.book_append_sheet(workbook, worksheet, dept);
+        }
+      });
+      XLSX.writeFile(workbook, 'lista_por_departamento.xlsx');
     });
-  });
-
-  document.getElementById('count').textContent = `Total de pessoas: ${total}`;
-}
-
   </script>
 
 </body>
