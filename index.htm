@@ -6,6 +6,30 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
+        /* Scrollbar para navegadores WebKit */
+::-webkit-scrollbar {
+  width: 32px;
+}
+
+::-webkit-scrollbar-track {
+  background: #eee;
+  border-left:1px solid #111;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #555;
+  border: 2px solid #ddd;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #333;
+}
+
+/* Scrollbar para Firefox */
+body {
+  scrollbar-width: thin;
+  scrollbar-color: #555 #eee;
+}
         input[type="file"], input[type="text"] { margin-bottom: 10px; }
         ul { list-style-type: none; padding-left: 0; }
         li { padding: 5px 0; border-bottom: 1px solid #ccc; }
