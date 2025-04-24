@@ -74,17 +74,31 @@
   const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
   const seen = new Set();
-  const filteredRows = json.slice(2).filter(row => {
-    const key = row[6]; // Coluna G
-    if (!key || seen.has(key)) {
-      return false;
+  const departments = {};
+
+  json.slice(2).forEach(row => {
+    const uniqueKey = row[6]; // Coluna G
+    const department = row[11] && row[11].trim() ? row[11].trim() : "Portaria Virtual"; // Coluna L
+
+    if (!uniqueKey || !department || seen.has(uniqueKey)) return;
+
+    seen.add(uniqueKey);
+
+    if (!departments[department]) {
+      departments[department] = [];
     }
-    seen.add(key);
-    return true;
+
+    const nome = row[7] || "";       // Coluna H
+const rg = row[6] || "";         // Coluna G
+const sobrenome = row[8] || "";  // Coluna I
+
+const itemText = `${nome} ${sobrenome} - ${rg}`;
+departments[department].push(itemText);
+
   });
 
-  allItems = filteredRows.map(row => row.join(' - '));
-  renderList(allItems);
+  allItems = departments;
+  renderGroupedList(departments);
 });
 
 
@@ -92,13 +106,22 @@
   const search = searchInput.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const searchWords = search.split(/\s+/).filter(Boolean);
 
-  const filtered = allItems.filter(item => {
-    const itemWords = item.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    return searchWords.every(word => itemWords.includes(word));
+  const filteredGroups = {};
+
+  Object.keys(allItems).forEach(dept => {
+    const filtered = allItems[dept].filter(item => {
+      const itemWords = item.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return searchWords.every(word => itemWords.includes(word));
+    });
+
+    if (filtered.length > 0) {
+      filteredGroups[dept] = filtered;
+    }
   });
 
-  renderList(filtered);
+  renderGroupedList(filteredGroups);
 });
+
 
 
     function renderList(items) {
@@ -119,6 +142,27 @@
   });
 
   document.getElementById('count').textContent = `Total de pessoas: ${items.length}`;
+}
+
+function renderGroupedList(groups) {
+  list.innerHTML = '';
+  let total = 0;
+
+  Object.keys(groups).sort().forEach(dept => {
+    const deptHeader = document.createElement('li');
+    deptHeader.innerHTML = `<strong>${dept}</strong>`;
+    deptHeader.style.marginTop = '15px';
+    list.appendChild(deptHeader);
+
+    groups[dept].forEach(item => {
+      const li = document.createElement('li');
+      li.textContent = item;
+      list.appendChild(li);
+      total++;
+    });
+  });
+
+  document.getElementById('count').textContent = `Total de pessoas: ${total}`;
 }
 
   </script>
