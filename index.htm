@@ -54,48 +54,6 @@
             margin-left: 0;
             margin-right: 0;
         }
-
-        #department-summary {
-            margin-top: 20px;
-            border-collapse: collapse;
-            width: 100%;
-            max-width: 600px;
-        }
-
-        #department-summary th, #department-summary td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-
-        #department-summary th {
-            background-color: #f0f0f0;
-        }
-
-        #department-summary tfoot td {
-            font-weight: bold;
-        }
-
-        #specific-department-summary {
-            margin-top: 20px;
-            border-collapse: collapse;
-            width: 100%;
-            max-width: 600px;
-        }
-
-        #specific-department-summary th, #specific-department-summary td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-
-        #specific-department-summary th {
-            background-color: #f0f0f0;
-        }
-
-        #specific-department-summary tfoot td {
-            font-weight: bold;
-        }
     </style>
 </head>
 <body>
@@ -108,55 +66,13 @@
     <p id="count">Total de pessoas: 0</p>
     <div id="department-filter" style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
         <strong>Filtrar por Departamento:</strong><br>
+        <label style="margin-bottom: 10px; cursor: pointer;">
+            <input type="checkbox" id="toggle-all-checkboxes"> Marcar Todos/Desmarcar Todos
+        </label>
     </div>
     <input type="search" id="search" placeholder="🔍 Pesquisar..." class="search-input" />
     <button id="export-excel" style="padding: 10px 15px; font-size: 16px; border: none; border-radius: 5px; background-color: #28a745; color: white; cursor: pointer; margin-top: 20px;">Exportar para Excel</button>
     <ul id="list"></ul>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <h1>Relatórios</h1>
-    <p>Relatório (Global)</p>
- <table id="department-summary">
-        <thead>
-            <tr>
-                <th>Departamento</th>
-                <th>Quantidade</th>
-            </tr>
-        </thead>
-        <tbody>
-        </tbody>
-        <tfoot>
-            <tr>
-                <td>Total</td>
-                <td>0</td>
-            </tr>
-        </tfoot>
-    </table>
-    <br>
-    <br>
-    <br>
-    <br>
-    <p>Relatório (BEES)</p>
-    <table id="specific-department-summary">
-        <thead>
-            <tr>
-                <th>Departamento</th>
-                <th>Quantidade</th>
-            </tr>
-        </thead>
-        <tbody>
-        </tbody>
-         <tfoot>
-            <tr>
-                <td>Total</td>
-                <td>0</td>
-            </tr>
-        </tfoot>
-    </table>
     <script>
         const uploadInput = document.getElementById('upload');
         const searchInput = document.getElementById('search');
@@ -164,38 +80,7 @@
         let allItems = [];
         let departmentCheckboxes = {};
         const departmentFilterDiv = document.getElementById('department-filter');
-        const departmentSummaryTable = document.getElementById('department-summary');
-        const specificDepartmentSummaryTable = document.getElementById('specific-department-summary');
-        const departmentMapping = {
-            "Visitantes": "Visitante",
-            "Ab-inbev": "AGT",
-            "Prestador de Serviços": "Prestador de Serviços",
-            "CDD Campinas": "CDD",
-            "Camila Murakawa": "AGT",
-            "Felipe Aragão": "AGT",
-            "Gabriel Filipecki": "AGT",
-            "Luis Veronesi": "AGT",
-            "Rafael Pacini": "AGT",
-            "Sonia Fuscaldi": "AGT",
-            "Sergio Vezza": "GROWTH",
-            "Fabio Mazza": "AGT",
-            "Ronaldo Fiorito": "AGT",
-            "Marcelo Rentz": "AGT",
-            "Goran Djuric": "AGT",
-            "AC": "Visitante",
-            "CSC": "CSC",
-            "Carlos Nobre": "AGT",
-            "Fernando Leite de Campos": "AGT",
-            "Mauricio Nogueira Soufen": "AGT",
-            "Alexandre Van Wonterghem": "AGT",
-            "Keith Davies": "AGT",
-            "Lojista - Feirinha": "Visitante",
-            "Terceiros Growth": "GROWTH",
-            "Tech": "GROWTH",
-            "Bees Tech": "GROWTH",
-            "Growth Group": "GROWTH"
-        };
-        const specificDepartments = ["CDD Campinas", "Sergio Vezza", "Terceiros Growth", "Bees Tech", "Growth Group"];
+        const toggleAllCheckbox = document.getElementById('toggle-all-checkboxes');
 
         uploadInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
@@ -208,38 +93,41 @@
             const worksheet = workbook.Sheets[sheetName];
             const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-            const seen = new Set();
             const departments = {};
-            const originalDepartments = {}; // Para armazenar os nomes originais dos departamentos
+            const originalDepartments = {};
 
             json.slice(2).forEach(row => {
-                const uniqueKey = row[6]; // Coluna G
-                const department = row[11] && row[11].trim() ? row[11].trim() : "Portaria Virtual"; // Coluna L
+                const id = row[0]; // Coluna A
+                const nome = row[1] ? row[1].trim() : ""; // Coluna B
+                const sobrenome = row[2] ? row[2].trim() : ""; // Coluna C
+                const department = row[4] && row[4].trim() ? row[4].trim() : "Portaria Virtual"; // Coluna E
 
-                if (!uniqueKey || !department || seen.has(uniqueKey)) return;
-
-                seen.add(uniqueKey);
+                if (!id || !nome || !sobrenome || !department) return;
 
                 if (!departments[department]) {
-                    departments[department] = [];
-                    originalDepartments[department] = department; // Armazena o nome original
+                    departments[department] = new Set();
+                    originalDepartments[department] = department;
                 }
 
-                const nome = row[7] || "";        // Coluna H
-                const rg = row[6] || "";          // Coluna G
-                const sobrenome = row[8] || "";   // Coluna I
-
-                const itemText = `${nome} ${sobrenome} - ${rg}`;
-                departments[department].push(itemText);
+                const itemText = `${nome} ${sobrenome} - ID: ${id}`;
+                departments[department].add(itemText);
             });
 
-            allItems = departments;
-            renderDepartmentFilters(originalDepartments); // Passa os nomes originais para a função de filtro
-            filterAndRenderList();
-            renderDepartmentSummary(departments);
-            renderSpecificDepartmentSummary(departments);
-        });
+            const departmentsArray = {};
+            for (const dept in departments) {
+                departmentsArray[dept] = Array.from(departments[dept]);
+            }
 
+            allItems = departmentsArray;
+            renderDepartmentFilters(originalDepartments);
+
+            const toggleAllCheckboxElement = document.getElementById('toggle-all-checkboxes');
+            if (toggleAllCheckboxElement && Object.keys(originalDepartments).length > 0) {
+                toggleAllCheckboxElement.checked = true;
+            }
+
+            filterAndRenderList();
+        });
 
         searchInput.addEventListener('input', () => {
             filterAndRenderList();
@@ -277,21 +165,35 @@
             document.getElementById('count').textContent = `Total de pessoas: ${total}`;
         }
 
-        function renderDepartmentFilters(departments) {
-            departmentFilterDiv.innerHTML = '<strong>Filtrar por Departamento:</strong><br>';
-            departmentCheckboxes = {}; // Limpa os checkboxes anteriores
+        function renderDepartmentFilters(depts) {
+            departmentFilterDiv.innerHTML = ''; // Limpa o conteúdo da div
 
-            Object.keys(departments).sort().forEach(dept => {
+            const toggleAllLabel = document.createElement('label');
+            const toggleCheckbox = document.createElement('input');
+            toggleCheckbox.type = 'checkbox';
+            toggleCheckbox.id = 'toggle-all-checkboxes';
+            toggleAllLabel.appendChild(toggleCheckbox);
+            toggleAllLabel.appendChild(document.createTextNode(' Marcar Todos/Desmarcar Todos'));
+            toggleAllLabel.style.marginBottom = '10px';
+            toggleAllLabel.style.cursor = 'pointer';
+            departmentFilterDiv.appendChild(toggleAllLabel);
+
+            toggleCheckbox.addEventListener('change', toggleAllDepartments);
+
+            departmentCheckboxes = {};
+
+            Object.keys(depts).sort().forEach(dept => {
+                const count = allItems[dept] ? allItems[dept].length : 0;
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
-                checkbox.id = `dept-${dept.replace(/\s+/g, '-')}`; // ID único para cada checkbox
+                checkbox.id = `dept-${dept.replace(/\s+/g, '-')}`;
                 checkbox.value = dept;
-                checkbox.checked = true; // Marcar todos por padrão
+                checkbox.checked = true;
                 checkbox.addEventListener('change', filterAndRenderList);
 
                 const label = document.createElement('label');
                 label.htmlFor = checkbox.id;
-                label.textContent = `${dept} (${departments[dept].length})`;
+                label.textContent = `${dept} (${count})`;
                 label.style.marginLeft = '0px';
                 label.style.marginRight = '0px';
 
@@ -299,8 +201,19 @@
                 div.appendChild(checkbox);
                 div.appendChild(label);
                 departmentFilterDiv.appendChild(div);
-                departmentCheckboxes[checkbox.id] = dept; // Armazena a relação ID do checkbox e nome do departamento
+                departmentCheckboxes[checkbox.id] = dept;
             });
+        }
+
+        function toggleAllDepartments() {
+            const shouldCheck = this.checked;
+            Object.keys(departmentCheckboxes).forEach(checkboxId => {
+                const checkbox = document.getElementById(checkboxId);
+                if (checkbox) {
+                    checkbox.checked = shouldCheck;
+                }
+            });
+            filterAndRenderList();
         }
 
         function filterAndRenderList() {
@@ -308,7 +221,6 @@
             const searchWords = search.split(/\s+/).filter(Boolean);
             const visibleDepartments = new Set();
 
-            // Verifica quais departamentos estão marcados
             Object.keys(departmentCheckboxes).forEach(checkboxId => {
                 if (document.getElementById(checkboxId).checked) {
                     visibleDepartments.add(departmentCheckboxes[checkboxId]);
@@ -333,56 +245,6 @@
             renderGroupedList(filteredGroups);
         }
 
-        function renderDepartmentSummary(departments) {
-            const summaryTableBody = departmentSummaryTable.querySelector('tbody');
-            const summaryTableFooter = departmentSummaryTable.querySelector('tfoot td:last-child');
-            summaryTableBody.innerHTML = ''; // Limpa a tabela
-
-            let total = 0;
-            const departmentCounts = {};
-
-             // Primeiro, mapeie os departamentos e conte as ocorrências
-            for (const dept in departments) {
-                const mappedDept = departmentMapping[dept] || dept; // Aplica o mapeamento
-                if (!departmentCounts[mappedDept]) {
-                    departmentCounts[mappedDept] = 0;
-                }
-                departmentCounts[mappedDept] += departments[dept].length;
-                total += departments[dept].length;
-            }
-
-            // Depois, exiba os resultados na tabela
-            for (const dept in departmentCounts) {
-                const row = summaryTableBody.insertRow();
-                const deptCell = row.insertCell();
-                const countCell = row.insertCell();
-                deptCell.textContent = dept;
-                countCell.textContent = departmentCounts[dept];
-            }
-
-            summaryTableFooter.textContent = total;
-        }
-
-        function renderSpecificDepartmentSummary(departments) {
-            const summaryTableBody = specificDepartmentSummaryTable.querySelector('tbody');
-            const summaryTableFooter = specificDepartmentSummaryTable.querySelector('tfoot td:last-child');
-            summaryTableBody.innerHTML = '';
-
-            let total = 0;
-
-            specificDepartments.forEach(deptName => {
-                const deptCount = departments[deptName] ? departments[deptName].length : 0;
-                const row = summaryTableBody.insertRow();
-                const deptCell = row.insertCell();
-                const countCell = row.insertCell();
-                deptCell.textContent = deptName;
-                countCell.textContent = deptCount;
-                total += deptCount;
-            });
-            summaryTableFooter.textContent = total;
-        }
-
-
         // botão para gerar o arquivo excel e baixar
         const exportExcelBtn = document.getElementById('export-excel');
 
@@ -390,7 +252,6 @@
             const workbook = XLSX.utils.book_new();
             const visibleDepartments = new Set();
 
-             // Verifica quais departamentos estão marcados
             Object.keys(departmentCheckboxes).forEach(checkboxId => {
                 if (document.getElementById(checkboxId).checked) {
                     visibleDepartments.add(departmentCheckboxes[checkboxId]);
@@ -398,7 +259,7 @@
             });
 
             Object.keys(allItems).forEach(dept => {
-                if (visibleDepartments.has(dept)) { //só adiciona a aba se o departamento estiver checado
+                if (visibleDepartments.has(dept)) {
                     const deptData = [[dept]];
                     allItems[dept].forEach(item => {
                         deptData.push([item]);
