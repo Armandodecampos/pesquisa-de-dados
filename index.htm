@@ -5,31 +5,33 @@
     <title>Pesquisa de todas as pessoas no sistema</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Adicionando a biblioteca SheetJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
         /* Scrollbar para navegadores WebKit */
-::-webkit-scrollbar {
-  width: 32px;
-}
+        ::-webkit-scrollbar {
+          width: 32px;
+        }
 
-::-webkit-scrollbar-track {
-  background: #eee;
-  border-left:1px solid #111;
-}
+        ::-webkit-scrollbar-track {
+          background: #eee;
+          border-left:1px solid #111;
+        }
 
-::-webkit-scrollbar-thumb {
-  background-color: #555;
-}
+        ::-webkit-scrollbar-thumb {
+          background-color: #555;
+        }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #333;
-}
+        ::-webkit-scrollbar-thumb:hover {
+          background: #333;
+        }
 
-/* Scrollbar para Firefox */
-body {
-  scrollbar-width: thin;
-  scrollbar-color: #555 #eee;
-}
+        /* Scrollbar para Firefox */
+        body {
+          scrollbar-width: thin;
+          scrollbar-color: #555 #eee;
+        }
         input[type="file"], input[type="text"] { margin-bottom: 10px; }
         ul { list-style-type: none; padding-left: 0; }
         li { padding: 5px 0; border-bottom: 1px solid #ccc; }
@@ -79,39 +81,39 @@ body {
             margin-right: 0;
         }
         .voltar-tela-inicial {
- display: flex;
-  flex-direction: row;
-    position: fixed;
-  top: 0px;
-  left: 0px;
-right:0;
-  display: flex;
-  flex-direction: row;
-  gap: 10px;
-  z-index: 999;
-  flex-wrap: wrap; /* Para permitir quebra de linha */
-  background:#222;
-  padding:10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-  justify-content: center;
-}
+            display: flex;
+            flex-direction: row;
+            position: fixed;
+            top: 0px;
+            left: 0px;
+            right:0;
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            z-index: 999;
+            flex-wrap: wrap; /* Para permitir quebra de linha */
+            background:#222;
+            padding:10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            justify-content: center;
+        }
 
 
-/* Estilo base compartilhado entre os botões */
-.voltar-tela-inicial button {
-  width: 50px;
-  height: 50px;
-  background: #eee;
-  border: 2px solid #000;
-  font-size: 24px;
-  cursor: pointer;
-  border-radius: 50%;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: black;
-}
+        /* Estilo base compartilhado entre os botões */
+        .voltar-tela-inicial button {
+            width: 50px;
+            height: 50px;
+            background: #eee;
+            border: 2px solid #000;
+            font-size: 24px;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: black;
+        }
     </style>
 </head>
 <body>
@@ -143,7 +145,7 @@ right:0;
         const uploadInput = document.getElementById('upload');
         const searchInput = document.getElementById('search');
         const list = document.getElementById('list');
-        let allItems = [];
+        let allItems = {};
         let departmentCheckboxes = {};
         const departmentFilterDiv = document.getElementById('department-filter');
         const toggleAllCheckbox = document.getElementById('toggle-all-checkboxes');
@@ -157,17 +159,22 @@ right:0;
             const workbook = XLSX.read(data, { type: 'array' });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
-            const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            // Utiliza a função sheet_to_json com a opção 'raw' para obter valores brutos
+            const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false });
 
             const departments = {};
             const originalDepartments = {};
 
-            json.slice(2).forEach(row => {
+            // O código original pulava as duas primeiras linhas (json.slice(2)).
+            // Vamos iterar sobre o array para garantir que estamos pegando a linha correta.
+            json.forEach(row => {
+                // Acessa as colunas A, B, C e E
                 const id = row[0]; // Coluna A
                 const nome = row[1] ? row[1].trim() : ""; // Coluna B
                 const sobrenome = row[2] ? row[2].trim() : ""; // Coluna C
                 const department = row[4] && row[4].trim() ? row[4].trim() : "Portaria Virtual"; // Coluna E
 
+                // Valida se os dados essenciais existem
                 if (!id || !nome || !sobrenome || !department) return;
 
                 if (!departments[department]) {
@@ -232,7 +239,7 @@ right:0;
         }
 
         function renderDepartmentFilters(depts) {
-            departmentFilterDiv.innerHTML = ''; // Limpa o conteúdo da div
+            departmentFilterDiv.innerHTML = '<strong>Filtrar por Departamento:</strong><br>'; // Limpa o conteúdo da div e adiciona o título
 
             const toggleAllLabel = document.createElement('label');
             const toggleCheckbox = document.createElement('input');
@@ -288,7 +295,8 @@ right:0;
             const visibleDepartments = new Set();
 
             Object.keys(departmentCheckboxes).forEach(checkboxId => {
-                if (document.getElementById(checkboxId).checked) {
+                const checkbox = document.getElementById(checkboxId);
+                if (checkbox && checkbox.checked) {
                     visibleDepartments.add(departmentCheckboxes[checkboxId]);
                 }
             });
@@ -319,7 +327,8 @@ right:0;
             const visibleDepartments = new Set();
 
             Object.keys(departmentCheckboxes).forEach(checkboxId => {
-                if (document.getElementById(checkboxId).checked) {
+                const checkbox = document.getElementById(checkboxId);
+                if (checkbox && checkbox.checked) {
                     visibleDepartments.add(departmentCheckboxes[checkboxId]);
                 }
             });
@@ -337,7 +346,5 @@ right:0;
             XLSX.writeFile(workbook, 'lista_por_departamento.xlsx');
         });
     </script>
-
 </body>
 </html>
-
