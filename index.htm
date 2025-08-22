@@ -140,6 +140,7 @@
     </div>
     <input type="search" id="search" placeholder="🔍 Pesquisar..." class="search-input" />
     <button id="export-excel" style="padding: 10px 15px; font-size: 16px; border: none; border-radius: 5px; background-color: #28a745; color: white; cursor: pointer; margin-top: 20px;">Exportar para Excel</button>
+    <button id="clear-cache" style="padding: 10px 15px; font-size: 16px; border: none; border-radius: 5px; background-color: #dc3545; color: white; cursor: pointer; margin-top: 20px;">Limpar Cache</button>
     <ul id="list"></ul>
     <script>
         const uploadInput = document.getElementById('upload');
@@ -149,6 +150,51 @@
         let departmentCheckboxes = {};
         const departmentFilterDiv = document.getElementById('department-filter');
         const toggleAllCheckbox = document.getElementById('toggle-all-checkboxes');
+        const clearCacheBtn = document.getElementById('clear-cache');
+
+        // Função para carregar dados do cache ao iniciar a página
+        function loadFromCache() {
+            const cachedData = localStorage.getItem('excelData');
+            if (cachedData) {
+                try {
+                    const parsedData = JSON.parse(cachedData);
+                    allItems = parsedData.items;
+                    const originalDepartments = parsedData.depts;
+                    document.getElementById('file-name').textContent = 'Dados carregados do cache.';
+                    
+                    renderDepartmentFilters(originalDepartments);
+
+                    const toggleAllCheckboxElement = document.getElementById('toggle-all-checkboxes');
+                    if (toggleAllCheckboxElement && Object.keys(originalDepartments).length > 0) {
+                        toggleAllCheckboxElement.checked = true;
+                    }
+
+                    filterAndRenderList();
+                } catch (e) {
+                    console.error("Erro ao carregar dados do cache:", e);
+                    localStorage.removeItem('excelData');
+                }
+            }
+        }
+
+        // Função para salvar dados no cache
+        function saveToCache() {
+            const dataToCache = {
+                items: allItems,
+                depts: Object.values(departmentCheckboxes).reduce((acc, dept) => {
+                    acc[dept] = dept;
+                    return acc;
+                }, {})
+            };
+            localStorage.setItem('excelData', JSON.stringify(dataToCache));
+        }
+
+        // Evento para limpar o cache
+        clearCacheBtn.addEventListener('click', () => {
+            localStorage.removeItem('excelData');
+            alert("Cache limpo com sucesso!");
+            window.location.reload(); // Recarrega a página para refletir a mudança
+        });
 
         uploadInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
@@ -165,8 +211,7 @@
             const departments = {};
             const originalDepartments = {};
 
-            // O código original pulava as duas primeiras linhas (json.slice(2)).
-            // Vamos iterar sobre o array para garantir que estamos pegando a linha correta.
+            // Itera sobre o array para pegar a linha correta
             json.forEach(row => {
                 // Acessa as colunas A, B, C e E
                 const id = row[0]; // Coluna A
@@ -193,6 +238,9 @@
 
             allItems = departmentsArray;
             renderDepartmentFilters(originalDepartments);
+            
+            // Salva os dados no cache após o upload
+            saveToCache();
 
             const toggleAllCheckboxElement = document.getElementById('toggle-all-checkboxes');
             if (toggleAllCheckboxElement && Object.keys(originalDepartments).length > 0) {
@@ -345,6 +393,9 @@
             });
             XLSX.writeFile(workbook, 'lista_por_departamento.xlsx');
         });
+
+        // Carrega os dados do cache ao iniciar a página
+        loadFromCache();
     </script>
 </body>
 </html>
