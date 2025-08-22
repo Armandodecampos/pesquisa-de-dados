@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <title>Pesquisa de todas as pessoas no sistema</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
         /* Scrollbar para navegadores WebKit */
@@ -77,10 +78,52 @@ body {
             margin-left: 0;
             margin-right: 0;
         }
+        .voltar-tela-inicial {
+ display: flex;
+  flex-direction: row;
+    position: fixed;
+  top: 0px;
+  left: 0px;
+right:0;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  z-index: 999;
+  flex-wrap: wrap; /* Para permitir quebra de linha */
+  background:#222;
+  padding:10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  justify-content: center;
+}
+
+
+/* Estilo base compartilhado entre os botões */
+.voltar-tela-inicial button {
+  width: 50px;
+  height: 50px;
+  background: #eee;
+  border: 2px solid #000;
+  font-size: 24px;
+  cursor: pointer;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: black;
+}
     </style>
 </head>
 <body>
-
+<div class="voltar-tela-inicial">
+   <button onclick="window.location.href='https://armandodecampos.github.io/Ferramentas---Ambev/'">
+      <i class="fas fa-home"></i>
+    </button>
+</div>
+<br>
+<br>
+<br>
+<br>
     <h3>Pesquisa de todas as pessoas no sistema</h3>
     <input type="file" id="upload" accept=".xls,.xlsx" />
     <label for="upload" class="upload-label">Selecionar arquivo Excel</label>
