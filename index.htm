@@ -146,8 +146,6 @@
     </div>
     <br>
     <input type="search" id="search" placeholder="🔍 Pesquisar..." class="search-input" />
-    <button id="export-excel" style="padding: 10px 15px; font-size: 16px; border: none; border-radius: 5px; background-color: #28a745; color: white; cursor: pointer; margin-top: 20px;">Exportar para Excel</button>
-    <button id="clear-cache" style="padding: 10px 15px; font-size: 16px; border: none; border-radius: 5px; background-color: #dc3545; color: white; cursor: pointer; margin-top: 20px;">Limpar Cache</button>
     <ul id="list"></ul>
     <script>
         const uploadInput = document.getElementById('upload');
@@ -157,7 +155,6 @@
         let departmentCheckboxes = {};
         const departmentFilterDiv = document.getElementById('department-filter');
         const toggleAllCheckbox = document.getElementById('toggle-all-checkboxes');
-        const clearCacheBtn = document.getElementById('clear-cache');
         const toggleFilterBtn = document.getElementById('toggle-filter-btn');
         const checkboxesContainer = document.getElementById('department-checkboxes-container');
 
@@ -197,13 +194,6 @@
             };
             localStorage.setItem('excelData', JSON.stringify(dataToCache));
         }
-
-        // Evento para limpar o cache
-        clearCacheBtn.addEventListener('click', () => {
-            localStorage.removeItem('excelData');
-            alert("Cache limpo com sucesso!");
-            window.location.reload(); // Recarrega a página para refletir a mudança
-        });
 
         uploadInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
@@ -415,38 +405,11 @@
             renderGroupedList(filteredGroups);
         }
 
-        // botão para gerar o arquivo excel e baixar
-        const exportExcelBtn = document.getElementById('export-excel');
-
-        exportExcelBtn.addEventListener('click', () => {
-            const workbook = XLSX.utils.book_new();
-            const visibleDepartments = new Set();
-
-            Object.keys(departmentCheckboxes).forEach(checkboxId => {
-                const checkbox = document.getElementById(checkboxId);
-                if (checkbox && checkbox.checked) {
-                    visibleDepartments.add(departmentCheckboxes[checkboxId]);
-                }
-            });
-
-            Object.keys(allItems).forEach(dept => {
-                if (visibleDepartments.has(dept)) {
-                    const deptData = [[dept]];
-                    allItems[dept].forEach(item => {
-                        deptData.push([item]);
-                    });
-                    const worksheet = XLSX.utils.aoa_to_sheet(deptData);
-                    XLSX.utils.book_append_sheet(workbook, worksheet, dept);
-                }
-            });
-            XLSX.writeFile(workbook, 'lista_por_departamento.xlsx');
-        });
-
         // Evento para o botão de abrir/fechar os filtros
         toggleFilterBtn.addEventListener('click', () => {
             checkboxesContainer.classList.toggle('hidden');
         });
-
+        
         // Carrega os dados do cache ao iniciar a página
         loadFromCache();
     </script>
