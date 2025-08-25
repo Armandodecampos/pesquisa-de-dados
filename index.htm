@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <title>Pesquisa de todas as pessoas no sistema</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Adicionando a biblioteca SheetJS -->
@@ -213,11 +214,14 @@
 
             // Itera sobre o array para pegar a linha correta
             json.forEach(row => {
-                // Acessa as colunas A, B, C e E
+                // Acessa as colunas A, B, C, E, H, I e J
                 const id = row[0]; // Coluna A
                 const nome = row[1] ? row[1].trim() : ""; // Coluna B
                 const sobrenome = row[2] ? row[2].trim() : ""; // Coluna C
                 const department = row[4] && row[4].trim() ? row[4].trim() : "Portaria Virtual"; // Coluna E
+                const columnH = row[7] ? row[7].trim() : "N/A"; // Coluna H
+                const columnI = row[8] ? row[8].trim() : "N/A"; // Coluna I
+                const columnJ = row[9] ? row[9].trim() : "N/A"; // Coluna J
 
                 // Valida se os dados essenciais existem
                 if (!id || !nome || !sobrenome || !department) return;
@@ -227,7 +231,8 @@
                     originalDepartments[department] = department;
                 }
 
-                const itemText = `${nome} ${sobrenome} - ID: ${id}`;
+                // Inclui as novas colunas no texto do item, sem os nomes das colunas
+                const itemText = `${nome} ${sobrenome} - ${id} - ${columnH} - ${columnI} - ${columnJ}`;
                 departments[department].add(itemText);
             });
 
