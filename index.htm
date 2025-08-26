@@ -218,23 +218,28 @@
             const departments = {};
             const originalDepartments = {};
 
+            // Mapeamento das colunas conforme o solicitado pelo usuário
+            const columnMapping = {
+                'ID': 0, // Coluna A (ID)
+                'Nome': 1, // Coluna B
+                'Sobrenome': 2, // Coluna C
+                'Departamento': 4, // Coluna E
+                'Celular': 7, // Coluna H
+                'Email': 8, // Coluna I (agora Cartão)
+                'Informado no Relatorio': 9 // Coluna J (agora Email)
+            };
+
             // Itera sobre o array para pegar a linha correta
             json.forEach(row => {
-                // Mapeamento das colunas:
-                // Coluna A -> ID
-                // Coluna B -> Nome
-                // Coluna C -> Sobrenome
-                // Coluna E -> Departamento
-                // Coluna H -> CPF (Assumido)
-                // Coluna I -> Telefone (Assumido)
-                // Coluna J -> E-mail (Assumido)
-                const id = row[0] ? row[0].toString().trim() : "N/A";
-                const nome = row[1] ? row[1].trim() : "N/A";
-                const sobrenome = row[2] ? row[2].trim() : "N/A";
-                const department = row[4] && row[4].trim() ? row[4].trim() : "Portaria Virtual";
-                const cpf = row[7] ? row[7].toString().trim() : "N/A";
-                const telefone = row[8] ? row[8].toString().trim() : "N/A";
-                const email = row[9] ? row[9].toString().trim() : "N/A";
+                // Mapeia os dados conforme o novo mapeamento de colunas e substitui valores em branco por '-'
+                const id = row[columnMapping['ID']] ? row[columnMapping['ID']].toString().trim() : "-";
+                const nome = row[columnMapping['Nome']] ? row[columnMapping['Nome']].trim() : "-";
+                const sobrenome = row[columnMapping['Sobrenome']] ? row[columnMapping['Sobrenome']].trim() : "-";
+                const department = row[columnMapping['Departamento']] && row[columnMapping['Departamento']].trim() ? row[columnMapping['Departamento']].trim() : "Portaria Virtual";
+                const celular = row[columnMapping['Celular']] ? row[columnMapping['Celular']].toString().trim() : "-";
+                const cartao = row[columnMapping['Email']] ? row[columnMapping['Email']].toString().trim() : "-"; // O antigo email agora é "Cartão"
+                const email = row[columnMapping['Informado no Relatorio']] ? row[columnMapping['Informado no Relatorio']].toString().trim() : "-"; // O antigo "Informado no Relatório" agora é "Email"
+                
 
                 // Valida se os dados essenciais existem
                 if (!id || !nome || !sobrenome || !department) return;
@@ -244,7 +249,7 @@
                     originalDepartments[department] = department;
                 }
                 
-                // Cria um elemento HTML para cada item com ícones
+                // Cria um elemento HTML para cada item com ícones e os novos cabeçalhos
                 const itemHtml = `
                     <div class="flex flex-wrap space-x-4">
                         <span class="flex items-center space-x-1">
@@ -253,22 +258,22 @@
                         </span>
                         <span class="flex items-center space-x-1">
                             <i class="fas fa-id-badge text-gray-500"></i>
-                            <span>ID: ${id}</span>
+                            <span>CPF (ID): ${id}</span>
                         </span>
-                        ${cpf !== "N/A" ? `
-                        <span class="flex items-center space-x-1">
-                            <i class="fas fa-address-card text-green-500"></i>
-                            <span>CPF: ${cpf}</span>
-                        </span>` : ''}
-                        ${telefone !== "N/A" ? `
-                        <span class="flex items-center space-x-1">
-                            <i class="fas fa-phone text-purple-500"></i>
-                            <span>${telefone}</span>
-                        </span>` : ''}
-                        ${email !== "N/A" ? `
+                        ${email !== "-" ? `
                         <span class="flex items-center space-x-1">
                             <i class="fas fa-envelope text-red-500"></i>
-                            <span>${email}</span>
+                            <span>Email: ${email}</span>
+                        </span>` : ''}
+                        ${celular !== "-" ? `
+                        <span class="flex items-center space-x-1">
+                            <i class="fas fa-phone text-purple-500"></i>
+                            <span>Celular: ${celular}</span>
+                        </span>` : ''}
+                        ${cartao !== "-" ? `
+                        <span class="flex items-center space-x-1">
+                            <i class="fas fa-address-card text-green-500"></i>
+                            <span>Cartão: ${cartao}</span>
                         </span>` : ''}
                     </div>
                 `;
@@ -435,5 +440,3 @@
     </script>
 </body>
 </html>
-
-
