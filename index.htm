@@ -161,6 +161,20 @@
         const list = document.getElementById('list');
         let allItems = {};
         let departmentCheckboxes = {};
+
+        // Função de normalização para remover acentos e converter para minúsculas
+        function normalizeText(text) {
+            return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
+
+        // Função de debounce para limitar a frequência de execução de uma função
+        function debounce(func, delay) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
         const departmentFilterDiv = document.getElementById('department-filter');
         const toggleAllCheckbox = document.getElementById('toggle-all-checkboxes');
         const toggleFilterBtn = document.getElementById('toggle-filter-btn');
@@ -278,12 +292,15 @@
                     </div>
                 `;
 
-                departments[department].add(itemHtml);
+                // Pre-calcula o texto de pesquisa para melhorar a performance
+                const searchText = normalizeText(`${nome} ${sobrenome} ${id} ${email} ${celular} ${cartao}`);
+
+                departments[department].add(JSON.stringify({ html: itemHtml, searchText: searchText }));
             });
 
             const departmentsArray = {};
             for (const dept in departments) {
-                departmentsArray[dept] = Array.from(departments[dept]);
+                departmentsArray[dept] = Array.from(departments[dept]).map(item => JSON.parse(item));
             }
 
             allItems = departmentsArray;
@@ -300,13 +317,15 @@
             filterAndRenderList();
         });
 
+        const debouncedFilter = debounce(filterAndRenderList, 300);
+
         searchInput.addEventListener('input', () => {
             if (searchInput.value.length > 0) {
                 clearSearchBtn.classList.remove('hidden');
             } else {
                 clearSearchBtn.classList.add('hidden');
             }
-            filterAndRenderList();
+            debouncedFilter();
         });
 
         // Adiciona um evento de clique para o novo botão de limpar
@@ -316,35 +335,29 @@
             filterAndRenderList(); // Atualiza a lista para mostrar todos os resultados
         });
 
-        function renderList(items) {
-            list.innerHTML = '';
-            items.forEach(item => {
-                const li = document.createElement('li');
-                li.innerHTML = item; // Use innerHTML para renderizar o HTML com os ícones
-                list.appendChild(li);
-            });
-
-            document.getElementById('count').textContent = `Total de pessoas: ${items.length}`;
-        }
 
         function renderGroupedList(groups) {
-            list.innerHTML = '';
+            const fragment = document.createDocumentFragment();
             let total = 0;
 
             Object.keys(groups).sort().forEach(dept => {
                 const deptHeader = document.createElement('li');
                 deptHeader.innerHTML = `<strong>${dept}</strong>`;
                 deptHeader.style.marginTop = '15px';
-                list.appendChild(deptHeader);
+                fragment.appendChild(deptHeader);
 
                 groups[dept].forEach(item => {
                     const li = document.createElement('li');
-                    li.innerHTML = item; // Use innerHTML para renderizar o HTML com os ícones
-                    list.appendChild(li);
+                    // Se item for uma string (dados antigos no cache), usa diretamente
+                    // Caso contrário, usa a propriedade html
+                    li.innerHTML = typeof item === 'string' ? item : item.html;
+                    fragment.appendChild(li);
                     total++;
                 });
             });
 
+            list.innerHTML = '';
+            list.appendChild(fragment);
             document.getElementById('count').textContent = `Total de pessoas: ${total}`;
         }
 
@@ -401,7 +414,7 @@
         }
 
         function filterAndRenderList() {
-            const search = searchInput.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            const search = normalizeText(searchInput.value);
             const searchWords = search.split(/\s+/).filter(Boolean);
             const visibleDepartments = new Set();
 
@@ -417,8 +430,10 @@
             Object.keys(allItems).forEach(dept => {
                 if (visibleDepartments.has(dept)) {
                     const filtered = allItems[dept].filter(item => {
-                        const itemWords = item.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                        return searchWords.every(word => itemWords.includes(word));
+                        // Se item for uma string (dados antigos no cache), normaliza na hora
+                        // Caso contrário, usa o searchText pré-calculado para melhor performance
+                        const itemSearchableText = typeof item === 'string' ? normalizeText(item) : item.searchText;
+                        return searchWords.every(word => itemSearchableText.includes(word));
                     });
 
                     if (filtered.length > 0) {
@@ -429,7 +444,6 @@
 
             renderGroupedList(filteredGroups);
         }
-
         // Evento para o botão de abrir/fechar os filtros
         toggleFilterBtn.addEventListener('click', () => {
             checkboxesContainer.classList.toggle('hidden');
