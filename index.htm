@@ -113,42 +113,6 @@
             align-items: center;
             color: black;
         }
-        .zk-bio-btn {
-            background-color: #28a745 !important;
-            color: white !important;
-            font-size: 18px !important;
-        }
-        #zk-count-container {
-            color: white;
-            cursor: pointer;
-            text-decoration: underline;
-            align-self: center;
-            margin-left: 10px;
-        }
-        #zk-window {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            z-index: 1000;
-            max-width: 90%;
-            max-height: 80%;
-            overflow-y: auto;
-            color: black;
-        }
-        #zk-window-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 999;
-        }
         .hidden {
             display: none !important;
         }
@@ -156,30 +120,9 @@
 </head>
 <body>
 <div class="voltar-tela-inicial">
-    <button onclick="window.location.href='https://armandodecampos.github.io/Ferramentas-Trabalho/'" title="Home">
-        <i class="fas fa-home"></i>
+   <button onclick="window.location.href='https://armandodecampos.github.io/Ferramentas-Trabalho/'">
+      <i class="fas fa-home"></i>
     </button>
-    <button onclick="alert('Destravar clicado')" title="Destravar">
-        <i class="fas fa-unlock"></i>
-    </button>
-    <input type="file" id="upload-zk" accept=".xls,.xlsx" class="hidden" />
-    <label for="upload-zk" class="voltar-tela-inicial" style="position: static; padding: 0; box-shadow: none; background: transparent; z-index: auto;">
-        <button type="button" onclick="document.getElementById('upload-zk').click()" class="zk-bio-btn" title="Enviar Excel Zk Bio">
-            <i class="fas fa-file-excel"></i>
-        </button>
-    </label>
-    <div id="zk-count-container" class="hidden">
-        <span id="zk-count-text">0 registros no Zk Bio</span>
-    </div>
-</div>
-
-<div id="zk-window-overlay" class="hidden"></div>
-<div id="zk-window" class="hidden">
-    <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold">Resultados Zk Bio</h2>
-        <button onclick="toggleZkWindow()" class="text-red-500 text-2xl">&times;</button>
-    </div>
-    <div id="zk-results-content"></div>
 </div>
 <br>
 <br>
@@ -213,17 +156,10 @@
     <ul id="list"></ul>
     <script>
         const uploadInput = document.getElementById('upload');
-        const uploadZkInput = document.getElementById('upload-zk');
         const searchInput = document.getElementById('search');
         const clearSearchBtn = document.getElementById('clear-search-btn');
         const list = document.getElementById('list');
-        const zkCountContainer = document.getElementById('zk-count-container');
-        const zkCountText = document.getElementById('zk-count-text');
-        const zkWindow = document.getElementById('zk-window');
-        const zkWindowOverlay = document.getElementById('zk-window-overlay');
-        const zkResultsContent = document.getElementById('zk-results-content');
         let allItems = {};
-        let zkItems = [];
         let departmentCheckboxes = {};
 
         // Função de normalização para remover acentos e converter para minúsculas
@@ -239,67 +175,6 @@
                 timeout = setTimeout(() => func.apply(this, args), delay);
             };
         }
-
-        async function processExcel(file) {
-            const data = await file.arrayBuffer();
-            const workbook = XLSX.read(data, { type: 'array' });
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
-            return XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false });
-        }
-
-        const columnMapping = {
-            'ID': 0, // Coluna A (ID)
-            'Nome': 1, // Coluna B
-            'Sobrenome': 2, // Coluna C
-            'Departamento': 4, // Coluna E
-            'Celular': 7, // Coluna H
-            'Email': 8, // Coluna I (agora Cartão)
-            'Informado no Relatorio': 9 // Coluna J (agora Email)
-        };
-
-        function mapRowToItem(row) {
-            const id = row[columnMapping['ID']] ? row[columnMapping['ID']].toString().trim() : "-";
-            const nome = row[columnMapping['Nome']] ? row[columnMapping['Nome']].trim() : "-";
-            const sobrenome = row[columnMapping['Sobrenome']] ? row[columnMapping['Sobrenome']].trim() : "-";
-            const department = row[columnMapping['Departamento']] && row[columnMapping['Departamento']].trim() ? row[columnMapping['Departamento']].trim() : "Portaria Virtual";
-            const celular = row[columnMapping['Celular']] ? row[columnMapping['Celular']].toString().trim() : "-";
-            const cartao = row[columnMapping['Email']] ? row[columnMapping['Email']].toString().trim() : "-";
-            const email = row[columnMapping['Informado no Relatorio']] ? row[columnMapping['Informado no Relatorio']].toString().trim() : "-";
-
-            if (!id || !nome || !sobrenome || !department) return null;
-
-            const itemHtml = `
-                <div class="flex flex-wrap space-x-4">
-                    <span class="flex items-center space-x-1">
-                        <i class="fas fa-user text-blue-500"></i>
-                        <span>${nome} ${sobrenome}</span>
-                    </span>
-                    <span class="flex items-center space-x-1">
-                        <i class="fas fa-id-badge text-gray-500"></i>
-                        <span>CPF (ID): ${id}</span>
-                    </span>
-                    ${email !== "-" ? `
-                    <span class="flex items-center space-x-1">
-                        <i class="fas fa-envelope text-red-500"></i>
-                        <span>Email: ${email}</span>
-                    </span>` : ''}
-                    ${celular !== "-" ? `
-                    <span class="flex items-center space-x-1">
-                        <i class="fas fa-phone text-purple-500"></i>
-                        <span>Celular: ${celular}</span>
-                    </span>` : ''}
-                    ${cartao !== "-" ? `
-                    <span class="flex items-center space-x-1">
-                        <i class="fas fa-address-card text-green-500"></i>
-                        <span>Cartão: ${cartao}</span>
-                    </span>` : ''}
-                </div>
-            `;
-            const searchText = normalizeText(`${nome} ${sobrenome} ${id} ${email} ${celular} ${cartao}`);
-            return { html: itemHtml, searchText: searchText, department: department };
-        }
-
         const departmentFilterDiv = document.getElementById('department-filter');
         const toggleAllCheckbox = document.getElementById('toggle-all-checkboxes');
         const toggleFilterBtn = document.getElementById('toggle-filter-btn');
@@ -311,11 +186,10 @@
             if (cachedData) {
                 try {
                     const parsedData = JSON.parse(cachedData);
-                    allItems = parsedData.items || {};
-                    zkItems = parsedData.zkItems || [];
-                    const originalDepartments = parsedData.depts || {};
+                    allItems = parsedData.items;
+                    const originalDepartments = parsedData.depts;
                     document.getElementById('file-name').textContent = 'Dados carregados do cache.';
-
+                    
                     renderDepartmentFilters(originalDepartments);
 
                     const toggleAllCheckboxElement = document.getElementById('toggle-all-checkboxes');
@@ -324,7 +198,6 @@
                     }
 
                     filterAndRenderList();
-                    updateZkUI();
                 } catch (e) {
                     console.error("Erro ao carregar dados do cache:", e);
                     localStorage.removeItem('excelData');
@@ -336,7 +209,6 @@
         function saveToCache() {
             const dataToCache = {
                 items: allItems,
-                zkItems: zkItems,
                 depts: Object.values(departmentCheckboxes).reduce((acc, dept) => {
                     acc[dept] = dept;
                     return acc;
@@ -347,81 +219,103 @@
 
         uploadInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
-            if (!file) return;
             document.getElementById('file-name').textContent = `📂 Arquivo selecionado: ${file.name}`;
+            if (!file) return;
 
-            const json = await processExcel(file);
+            const data = await file.arrayBuffer();
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            // Utiliza a função sheet_to_json com a opção 'raw' para obter valores brutos
+            const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false });
+
             const departments = {};
             const originalDepartments = {};
 
-            json.forEach(row => {
-                const item = mapRowToItem(row);
-                if (!item) return;
+            // Mapeamento das colunas conforme o solicitado pelo usuário
+            const columnMapping = {
+                'ID': 0, // Coluna A (ID)
+                'Nome': 1, // Coluna B
+                'Sobrenome': 2, // Coluna C
+                'Departamento': 4, // Coluna E
+                'Celular': 7, // Coluna H
+                'Email': 8, // Coluna I (agora Cartão)
+                'Informado no Relatorio': 9 // Coluna J (agora Email)
+            };
 
-                if (!departments[item.department]) {
-                    departments[item.department] = [];
-                    originalDepartments[item.department] = item.department;
+            // Itera sobre o array para pegar a linha correta
+            json.forEach(row => {
+                // Mapeia os dados conforme o novo mapeamento de colunas e substitui valores em branco por '-'
+                const id = row[columnMapping['ID']] ? row[columnMapping['ID']].toString().trim() : "-";
+                const nome = row[columnMapping['Nome']] ? row[columnMapping['Nome']].trim() : "-";
+                const sobrenome = row[columnMapping['Sobrenome']] ? row[columnMapping['Sobrenome']].trim() : "-";
+                const department = row[columnMapping['Departamento']] && row[columnMapping['Departamento']].trim() ? row[columnMapping['Departamento']].trim() : "Portaria Virtual";
+                const celular = row[columnMapping['Celular']] ? row[columnMapping['Celular']].toString().trim() : "-";
+                const cartao = row[columnMapping['Email']] ? row[columnMapping['Email']].toString().trim() : "-"; // O antigo email agora é "Cartão"
+                const email = row[columnMapping['Informado no Relatorio']] ? row[columnMapping['Informado no Relatorio']].toString().trim() : "-"; // O antigo "Informado no Relatório" agora é "Email"
+                
+
+                // Valida se os dados essenciais existem
+                if (!id || !nome || !sobrenome || !department) return;
+
+                if (!departments[department]) {
+                    departments[department] = new Set();
+                    originalDepartments[department] = department;
                 }
-                departments[item.department].push({ html: item.html, searchText: item.searchText });
+                
+                // Cria um elemento HTML para cada item com ícones e os novos cabeçalhos
+                const itemHtml = `
+                    <div class="flex flex-wrap space-x-4">
+                        <span class="flex items-center space-x-1">
+                            <i class="fas fa-user text-blue-500"></i>
+                            <span>${nome} ${sobrenome}</span>
+                        </span>
+                        <span class="flex items-center space-x-1">
+                            <i class="fas fa-id-badge text-gray-500"></i>
+                            <span>CPF (ID): ${id}</span>
+                        </span>
+                        ${email !== "-" ? `
+                        <span class="flex items-center space-x-1">
+                            <i class="fas fa-envelope text-red-500"></i>
+                            <span>Email: ${email}</span>
+                        </span>` : ''}
+                        ${celular !== "-" ? `
+                        <span class="flex items-center space-x-1">
+                            <i class="fas fa-phone text-purple-500"></i>
+                            <span>Celular: ${celular}</span>
+                        </span>` : ''}
+                        ${cartao !== "-" ? `
+                        <span class="flex items-center space-x-1">
+                            <i class="fas fa-address-card text-green-500"></i>
+                            <span>Cartão: ${cartao}</span>
+                        </span>` : ''}
+                    </div>
+                `;
+
+                // Pre-calcula o texto de pesquisa para melhorar a performance
+                const searchText = normalizeText(`${nome} ${sobrenome} ${id} ${email} ${celular} ${cartao}`);
+
+                departments[department].add(JSON.stringify({ html: itemHtml, searchText: searchText }));
             });
 
-            allItems = departments;
+            const departmentsArray = {};
+            for (const dept in departments) {
+                departmentsArray[dept] = Array.from(departments[dept]).map(item => JSON.parse(item));
+            }
+
+            allItems = departmentsArray;
             renderDepartmentFilters(originalDepartments);
+            
+            // Salva os dados no cache após o upload
             saveToCache();
 
             const toggleAllCheckboxElement = document.getElementById('toggle-all-checkboxes');
             if (toggleAllCheckboxElement && Object.keys(originalDepartments).length > 0) {
                 toggleAllCheckboxElement.checked = true;
             }
+
             filterAndRenderList();
         });
-
-        uploadZkInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const json = await processExcel(file);
-            zkItems = [];
-            json.forEach(row => {
-                const item = mapRowToItem(row);
-                if (item) zkItems.push(item);
-            });
-
-            updateZkUI();
-            saveToCache();
-        });
-
-        function updateZkUI() {
-            if (zkItems.length > 0) {
-                zkCountContainer.classList.remove('hidden');
-                zkCountText.textContent = `${zkItems.length} registros no Zk Bio`;
-                renderZkResults();
-            } else {
-                zkCountContainer.classList.add('hidden');
-            }
-        }
-
-        function renderZkResults() {
-            const fragment = document.createDocumentFragment();
-            zkItems.forEach(item => {
-                const li = document.createElement('li');
-                li.className = "py-2 border-bottom border-gray-200";
-                li.innerHTML = item.html;
-                fragment.appendChild(li);
-            });
-            zkResultsContent.innerHTML = '';
-            const ul = document.createElement('ul');
-            ul.appendChild(fragment);
-            zkResultsContent.appendChild(ul);
-        }
-
-        function toggleZkWindow() {
-            zkWindow.classList.toggle('hidden');
-            zkWindowOverlay.classList.toggle('hidden');
-        }
-
-        zkCountContainer.addEventListener('click', toggleZkWindow);
-        zkWindowOverlay.addEventListener('click', toggleZkWindow);
 
         const debouncedFilter = debounce(filterAndRenderList, 300);
 
@@ -554,7 +448,7 @@
         toggleFilterBtn.addEventListener('click', () => {
             checkboxesContainer.classList.toggle('hidden');
         });
-
+        
         // Carrega os dados do cache ao iniciar a página
         loadFromCache();
     </script>
